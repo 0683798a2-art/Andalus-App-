@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام متابعة فواتير المطعم - الأندلس (المطور)</title>
+    <style>
+        /* أنماط التصميم الأساسية */
+        body {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f0e6d4 0%, #e8dec7 50%, #f0e6d4 100%); 
+            min-height: 100vh;
+            direction: rtl;
+            text-align: right;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        /* الـ Header بتصميم الأندلس */
+        .header {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        .restaurant-name {
+            font-family: 'Arial Black', Gadget, sans-serif; 
+            font-size: 2rem; 
+            margin-top: 10px;
+            color: transparent; 
+            text-shadow: 
+                0 0 5px rgba(255, 223, 0, 0.8), 
+                2px 2px 4px rgba(0, 0, 0, 0.5); 
+            background: linear-gradient(180deg, #ffeb3b 0%, #ffc107 50%, #ffb300 100%);
+            -webkit-background-clip: text; 
+            background-clip: text; 
+            font-weight: 900;
+        }
+        
+        .current-time {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 1rem;
+            color: #ffe0b2;
+        }
+        
+        /* تنبيه التأخير العائم */
+        #delay-alert-box {
+            display: none; 
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(45deg, #ff5722, #e64a19);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(255, 87, 34, 0.5);
+            font-weight: 700;
+            font-size: 1.1rem;
+            z-index: 1000;
+            border: 3px solid #ffccbc;
+            animation: fadeIn 0.5s;
+        }
+        #delay-alert-box button {
+            background: #fff;
+            color: #ff5722;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 8px;
+            margin-right: 15px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(-20px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        /* التبويبات والمحتوى */
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 18px;
+            text-align: center;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: #666;
+            margin-left: 5px;
+        }
+
+        .tab.active {
+            background: white;
+            color: #d32f2f; 
+            border-bottom: 4px solid #d32f2f;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+        
+        h2 {
+            color: #d32f2f;
+            border-bottom: 2px solid #ffeb3b;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+        }
+
+        /* المدخلات والأزرار */
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 8px 0;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin: 8px 0;
+            transition: all 0.3s;
+        }
+        
+        /* أزرار البحث */
+        .search-form-buttons {
+            display: flex;
+            gap: 15px;
+        }
+
+        .search-form-buttons button {
+            width: 50%;
+            margin: 0;
+            padding: 12px 20px;
+        }
+
+        #search-result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff3cd; 
+            border: 2px solid #ffeeba;
+            border-radius: 12px;
+            font-size: 1rem;
+            color: #856404;
+            line-height: 2;
+        }
+        
+        /* الجداول */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: right;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        th {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c); 
+            color: white;
+            font-weight: 700;
+        }
+        
+        .status-btn {
+            padding: 8px 15px;
+            width: auto;
+            margin: 5px 0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: block; 
+            text-align: center;
+        }
+
+        .status-btn.btn-complete {
+            background: linear-gradient(135deg, #4CAF50, #388e3c);
+            color: white;
+        }
+        
+        .status-btn.btn-danger {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        /* تنسيق الأداء والتأخير */
+        .performance-avg {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+        
+        /* تلوين الصفوف حسب الحالة */
+        .row-complete {
+            background-color: #e8f5e9; /* Light Green */
+        }
+        .row-delayed {
+            background-color: #ffcdd2; /* Light Red */
+            border-right: 5px solid #d32f2f;
+        }
+        
+        /* تنسيق تناسب الجوالات (Media Queries) */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            .tabs {
+                flex-direction: column;
+            }
+            .tab {
+                padding: 15px;
+            }
+            .tab-content {
+                padding: 20px;
+            }
+            
+            /* تحسين تناسق الأزرار والمدخلات في الشاشات الصغيرة */
+            .btn, .search-form-buttons button {
+                width: 100%;
+                margin: 8px 0;
+            }
+            .search-form-buttons {
+                flex-direction: column;
+            }
+            
+            /* جعل الأزرار في جدول إدارة المباشرين مرئية بالكامل */
+            #crew-list-table td:nth-child(3) {
+                white-space: nowrap; 
+            }
+            .status-btn {
+                display: inline-block; 
+                width: auto;
+                margin: 2px 5px;
+            }
+
+            .developer-footer {
+                padding: 20px;
+            }
+            
+            #delay-alert-box {
+                width: 90%;
+                right: 5%;
+                font-size: 1rem;
+            }
+        }
+        
+        /* أنماط تلوين الوقت والحالة */
+        .time-elapsed-warning {
+            color: #FF5722; 
+            font-weight: bold;
+        }
+        
+        .time-elapsed-normal {
+            color: #00796b; 
+            font-weight: bold;
+        }
+        
+        /* 💡 النمط الجديد لاسم المباشر في البحث */
+        .crew-name-highlight {
+            color: #d32f2f; 
+            font-weight: 900;
+            font-size: 1.1rem;
+        }
+        
+        /* --- أنماط Developer Footer المنسوخة --- */
+        .developer-footer {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            margin-top: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .developer-footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image:svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="0,0 100,0 80,100 0,100" fill="rgba(255,255,255,0.05)"/></svg>');
+        }
+
+        .developer-info {
+            position: relative;
+            z-index: 1;
+        }
+
+        .developer-name {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .developer-title {
+            font-size: 1.1rem;
+            color: #ecf0f1;
+            margin-bottom: 15px;
+        }
+
+        .developer-contact {
+            font-size: 0.9rem;
+            color: #bdc3c7;
+            font-style: italic;
+        }
+        /* ------------------------------------- */
+
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            .container {
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                margin: 0 !important;
+            }
+            .tabs, .log-controls, .filter-group, .header, .developer-footer, .action-cell, #delay-alert-box {
+                display: none !important;
+            }
+            #performance-log, #today-log {
+                display: block !important;
+                padding: 10px !important;
+            }
+            table {
+                box-shadow: none !important;
+            }
+            th {
+                background: #d32f2f !important;
+                -webkit-print-color-adjust: exact;
+                color: white !important;
+            }
+            h2 {
+                color: #333 !important;
+                border-bottom: 2px solid #ccc !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="delay-alert-box">
+    ⚠️ تنبيه تأخير: الفاتورة <span id="alert-invoice-num"></span> للطاولة <span id="alert-table-num"></span> تجاوزت 15 دقيقة!
+    <button onclick="hideDelayAlert()">حسناً</button>
+</div>
+
+<div class="container">
+    
+    <header class="header">
+        <h1>نظام متابعة فواتير المطعم 📝</h1>
+        <div class="restaurant-name">مطاعم وبروست الأندلس (النسخة المطورة)</div>
+        <div class="current-time" id="currentTime"></div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('invoice-entry')" id="btn-invoice">تسجيل الفاتورة</button>
+        <button class="tab" onclick="showTab('today-log')" id="btn-today">سجل فواتير اليوم</button>
+        <button class="tab" onclick="authenticateAndShowTab('performance-log')" id="btn-log">متابعة الأرشيف وأداء المباشرين</button>
+        <button class="tab" onclick="authenticateAndShowTab('crew-management')" id="btn-crew">إدارة المباشرين</button>
+    </div>
+
+    <div id="invoice-entry" class="tab-content active">
+        <h2>إدخال بيانات الفاتورة والطاولة</h2>
+        <input type="text" id="invoice-num" placeholder="رقم الفاتورة الشاملة" inputmode="numeric" required>
+        <input type="text" id="table-num" placeholder="رقم الطاولة" inputmode="numeric" required>
+        
+        <label for="crew-select" style="display: block; margin-top: 15px; font-weight: 600;">اختيار المباشر المستلم:</label>
+        <select id="crew-select" onchange="تبديل_الإدخال_اليدوي()">
+            </select>
+
+        <label for="manual-crew" style="display:none; margin-top: 15px; font-weight: 600;">إدخال اسم مباشر يدوي (مساعد/عامل ذروة):</label>
+        <input type="text" id="manual-crew" placeholder="اسم المستلم اليدوي" style="display:none;" inputmode="text">
+        
+        <button onclick="تسجيل_الفاتورة()" class="btn btn-success">تسجيل الفاتورة ✅</button>
+        
+        <hr style="margin: 30px 0; border-color: #eee;">
+
+        <div class="search-form">
+            <h2>بحث سريع 🔍</h2>
+            <input type="text" id="search-input" placeholder="أدخل رقم الفاتورة أو الطاولة للبحث" inputmode="numeric">
+            <div class="search-form-buttons">
+                <button onclick="البحث_السريع('invoice')" class="btn-search-invoice">بحث برقم الفاتورة (اليوم فقط)</button>
+                <button onclick="البحث_السريع('table')" class="btn-search-table">بحث برقم الطاولة</button>
+            </div>
+            <p id="search-result" style="font-weight: bold; margin-top: 10px;"></p>
+        </div>
+    </div>
+    
+    <div id="today-log" class="tab-content" style="display:none;">
+        <h2>سجل فواتير اليوم الحالي ☀️</h2>
+        
+        <div class="table-container">
+            <table id="today-invoices-table">
+                <thead>
+                    <tr>
+                        <th>الوقت</th>
+                        <th>رقم الفاتورة</th>
+                        <th>رقم الطاولة</th>
+                        <th>المستلم</th>
+                        <th>الزمن المنقضي</th>
+                        <th>إجراء</th> 
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+        <h3 id="today-stats" style="margin-top: 15px; color: #d32f2f;">الإجمالي: 0 فاتورة اليوم</h3>
+    </div>
+    
+    <div id="performance-log" class="tab-content" style="display:none;">
+        <h2>متابعة الأرشيف وأداء المباشرين 📊</h2>
+        
+        <div class="filter-group">
+            <div class="filter-item">
+                 <label for="filter-date">فلترة حسب التاريخ (الأرشيف):</label>
+                 <select id="filter-date" onchange="فلترة_الفواتير()">
+                    </select>
+            </div>
+            
+            <div class="filter-item">
+                 <label for="filter-crew-select">فلترة حسب المباشر (بالاسم):</label>
+                 <select id="filter-crew-select" onchange="فلترة_الفواتير()">
+                    </select>
+            </div>
+            
+            <div class="filter-item">
+                 <label for="filter-crew-id">فلترة حسب المباشر (بالرقم الوظيفي ID):</label>
+                 <input type="text" id="filter-crew-id" placeholder="أدخل الرقم الوظيفي هنا" oninput="فلترة_الفواتير()" style="width: 100%;">
+            </div>
+
+            <button onclick="فلترة_الفواتير()" class="btn">تطبيق الفلاتر وعرض الإحصاءات</button>
+        </div>
+
+        <h3 id="filtered-stats" style="margin-top: 15px; color: #155724;">الإجمالي: 0 فاتورة مُسجلة</h3>
+        <p id="performance-summary" style="margin-top: 10px; padding: 15px; border-radius: 8px; background: #e0f7fa; border: 1px solid #b2ebf2;">
+             **متوسط وقت الإنجاز (TAT):** <span class="performance-avg" id="avg-tat">--</span> | **متوسط زمن التأخير:** <span class="performance-avg" id="avg-delay">--</span>
+        </p>
+
+        <div class="table-container">
+            <table id="invoices-log-table">
+                <thead>
+                    <tr>
+                        <th>الوقت والتاريخ</th>
+                        <th>رقم الفاتورة</th>
+                        <th>رقم الطاولة</th>
+                        <th>المستلم</th>
+                        <th>مدة الإنجاز (دقيقة)</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+        
+        <div class="log-controls">
+             <button onclick="exportDataToCSV()" class="btn btn-export">تصدير وتحميل (CSV) ⬇️</button>
+             <button onclick="printInvoicesLog()" class="btn btn-print">🖨️ طباعة السجل</button>
+             <button onclick="مسح_جميع_البيانات()" class="btn btn-danger">مسح جميع البيانات (تحذير!)</button>
+        </div>
+    </div>
+
+
+    <div id="crew-management" class="tab-content" style="display:none;">
+        <h2>إضافة وتعديل بيانات المباشرين</h2>
+        <input type="text" id="new-crew-name" placeholder="اسم المباشر" inputmode="text" required>
+        <input type="text" id="new-crew-id" placeholder="الرقم التعريفي (ID)" required>
+        <button onclick="إضافة_عضو_المباشرين()" class="btn btn-success">إضافة مباشر جديد ➕</button>
+
+        <h3>قائمة المباشرين المسجلين</h3>
+        <div class="table-container">
+            <table id="crew-list-table">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>الرقم التعريفي (ID)</th>
+                        <th>إجراء</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div class="developer-footer">
+        <div class="developer-info">
+            <div class="developer-name">عبد الحميد فرج</div>
+            <div class="developer-title">مطور ومصمم النظام</div>
+            <div class="developer-contact">تم تطوير هذا النظام خصيصاً لمطاعم وبروست الأندلس</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // الدوال الأساسية
+    const مفتاح_المباشرين = 'restaurantCrew';
+    const مفتاح_الفواتير = 'restaurantInvoices';
+    const حد_التأخير_بالدقائق = 15; // حد التأخير هو 15 دقيقة
+    const ADMIN_PIN = '1234'; // **الرمز السري الإداري الافتراضي**
+
+    // إعدادات التوقيت الميلادي 12 ساعة (ص/م)
+    const خيارات_التاريخ = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true, 
+        calendar: 'gregory' 
+    };
+
+    // --- وظائف عامة ومساعدة ---
+    
+    function الحصول_على_سلسلة_تاريخ_الفاتورة(المدخل) {
+        let تاريخ;
+        if (المدخل && المدخل.recordedDate instanceof Date) {
+            تاريخ = المدخل.recordedDate;
+        } else if (المدخل instanceof Date) { 
+            تاريخ = المدخل;
+        } else {
+            return '';
+        }
+
+        return تاريخ.getFullYear() + '-' + 
+               String(تاريخ.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(تاريخ.getDate()).padStart(2, '0');
+    }
+
+    function تحديث_الوقت_الحالي() {
+        const الآن = new Date();
+        const تاريخ_ميلادي = الآن.toLocaleDateString('ar-EG', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            calendar: 'gregory'
+        });
+        const وقت_ميلادي = الآن.toLocaleTimeString('ar-EG', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+        
+        document.getElementById('currentTime').textContent = `التاريخ: ${تاريخ_ميلادي} | الوقت: ${وقت_ميلادي}`;
+    }
+    
+    setInterval(تحديث_الوقت_الحالي, 1000);
+    تحديث_الوقت_الحالي();
+    
+    function تنسيق_فرق_الوقت(تاريخ_التسجيل, تاريخ_الإكمال = null) {
+        const الآن = تاريخ_الإكمال ? تاريخ_الإكمال : new Date();
+        const فرق_بالملي_ثانية = الآن.getTime() - تاريخ_التسجيل.getTime();
+        
+        if (فرق_بالملي_ثانية < 0) return '0 دقيقة و 0 ثانية'; 
+
+        const فرق_بالثواني = Math.floor(فرق_بالملي_ثانية / 1000);
+        const دقائق = Math.floor(فرق_بالثواني / 60);
+        const ثواني = فرق_بالثواني % 60;
+        
+        const سلسلة_فرق_الوقت = `${دقائق} دقيقة و ${ثواني} ثانية`;
+        
+        const حد_التأخير_ملي_ثانية = حد_التأخير_بالدقائق * 60 * 1000;
+        
+        if (تاريخ_الإكمال) {
+            // إذا تم الإكمال، نعرض المدة الفعلية بالدقائق والزمن بدون فئات
+            return `${دقائق} دقيقة ${ثواني} ثانية`;
+        } else {
+             // إذا لم يتم الإكمال، نستخدم فئات الألوان للتحذير
+            const اسم_الفئة = فرق_بالملي_ثانية >= حد_التأخير_ملي_ثانية ? 'time-elapsed-warning' : 'time-elapsed-normal';
+            return `<span class="${اسم_الفئة}">${سلسلة_فرق_الوقت}</span>`;
+        }
+    }
+
+
+    // --- وظائف التخزين المحلي (Local Storage) ---
+
+    function الحصول_على_العناصر(المفتاح) {
+        try {
+            const البيانات = localStorage.getItem(المفتاح);
+            const العناصر = البيانات ? JSON.parse(البيانات) : [];
+            if (المفتاح === مفتاح_الفواتير) {
+                return العناصر.map(العنصر => ({
+                    ...العنصر,
+                    recordedDate: new Date(العنصر.recordedDate || العنصر.id),
+                    // التحويل إلى Date إذا كان موجوداً
+                    completedDate: العنصر.completedDate ? new Date(العنصر.completedDate) : null,
+                    isCompleted: العنصر.isCompleted === true 
+                }));
+            }
+            return العناصر;
+        } catch (e) {
+            console.error("Error reading Local Storage:", e);
+            return [];
+        }
+    }
+
+    function حفظ_العناصر(المفتاح, العناصر) {
+        try {
+            let العناصر_للحفظ = العناصر;
+            if (المفتاح === مفتاح_الفواتير) {
+                العناصر_للحفظ = العناصر.map(العنصر => ({
+                    ...العنصر,
+                    // حفظ كختم زمني (timestamp)
+                    recordedDate: العنصر.recordedDate instanceof Date ? العنصر.recordedDate.getTime() : العنصر.recordedDate,
+                    completedDate: العنصر.completedDate instanceof Date ? العنصر.completedDate.getTime() : العنصر.completedDate
+                }));
+            }
+            localStorage.setItem(المفتاح, JSON.stringify(العناصر_للحفظ));
+        } catch (e) {
+            console.error("Error saving to Local Storage:", e);
+        }
+    }
+    
+    // --- وظائف إدارة المباشرين (Crew Management) ---
+
+    function تحميل_قائمة_المباشرين() {
+        const المباشرون = الحصول_على_العناصر(مفتاح_المباشرين);
+        const تحديد_المباشر = document.getElementById('crew-select');
+        const فلترة_تحديد_المباشر = document.getElementById('filter-crew-select');
+        const جسم_جدول_قائمة_المباشرين = document.querySelector('#crew-list-table tbody');
+
+        تحديد_المباشر.innerHTML = '<option value="">-- اختر مباشر --</option><option value="MANUAL_CASHIER">كاشير/مباشر غير محدد</option><option value="manual">-- إدخال اسم يدوي --</option>';
+        فلترة_تحديد_المباشر.innerHTML = '<option value="">-- عرض الجميع --</option>';
+        جسم_جدول_قائمة_المباشرين.innerHTML = '';
+
+        المباشرون.forEach(العضو => {
+            // للقائمة في الإدخال (تسجيل الفاتورة)
+            const خيار_إدخال = document.createElement('option');
+            خيار_إدخال.value = العضو.id;
+            خيار_إدخال.textContent = `${العضو.name} (${العضو.id})`; // عرض الـ ID
+            تحديد_المباشر.appendChild(خيار_إدخال);
+            
+            // للقائمة في الفلترة 
+            const خيار_فلترة = document.createElement('option');
+            خيار_فلترة.value = العضو.id;
+            خيار_فلترة.textContent = `${العضو.name} (${العضو.id})`;
+            فلترة_تحديد_المباشر.appendChild(خيار_فلترة);
+
+            // لجدول إدارة المباشرين
+            const صف = جسم_جدول_قائمة_المباشرين.insertRow();
+            صف.insertCell().textContent = العضو.name;
+            صف.insertCell().textContent = العضو.id;
+            const خلية_الإجراء = صف.insertCell();
+            const زر_الحذف = document.createElement('button');
+            زر_الحذف.textContent = 'حذف';
+            زر_الحذف.className = 'status-btn btn-danger';
+            زر_الحذف.onclick = () => حذف_عضو_المباشرين(العضو.id);
+            خلية_الإجراء.appendChild(زر_الحذف);
+        });
+    }
+
+    function إضافة_عضو_المباشرين() {
+        const إدخال_الاسم = document.getElementById('new-crew-name');
+        const إدخال_الرقم = document.getElementById('new-crew-id');
+        const الاسم = إدخال_الاسم.value.trim();
+        const الرقم = إدخال_الرقم.value.trim().toUpperCase();
+
+        if (!الاسم || !الرقم) {
+            alert('يجب إدخال الاسم والرقم التعريفي (ID).');
+            return;
+        }
+
+        let المباشرون = الحصول_على_العناصر(مفتاح_المباشرين);
+        if (المباشرون.some(العضو => العضو.id === الرقم)) {
+            alert('الرقم التعريفي (ID) موجود مسبقاً.');
+            return;
+        }
+
+        المباشرون.push({ name: الاسم, id: الرقم });
+        حفظ_العناصر(مفتاح_المباشرين, المباشرون);
+        إدخال_الاسم.value = '';
+        إدخال_الرقم.value = '';
+        alert('تم إضافة المباشر بنجاح!');
+        تحميل_قائمة_المباشرين();
+    }
+
+    function حذف_عضو_المباشرين(الرقم) {
+        if (!confirm('هل أنت متأكد من حذف هذا المباشر؟')) return;
+        let المباشرون = الحصول_على_العناصر(مفتاح_المباشرين);
+        المباشرون = المباشرون.filter(العضو => العضو.id !== الرقم);
+        حفظ_العناصر(مفتاح_المباشرين, المباشرون);
+        alert('تم حذف المباشر.');
+        تحميل_قائمة_المباشرين();
+    }
+
+    function تبديل_الإدخال_اليدوي() {
+        const تحديد_المباشر = document.getElementById('crew-select');
+        const إدخال_يدوي = document.getElementById('manual-crew');
+        const تسمية_يدوية = document.querySelector('label[for="manual-crew"]');
+        
+        if (تحديد_المباشر.value === 'manual') {
+            إدخال_يدوي.style.display = 'block';
+            تسمية_يدوية.style.display = 'block';
+            إدخال_يدوي.focus();
+        } else {
+            إدخال_يدوي.style.display = 'none';
+            تسمية_يدوية.style.display = 'none';
+            إدخال_يدوي.value = ''; 
+        }
+    }
+    
+    // --- وظائف تسجيل الفاتورة (Invoice Entry) ---
+
+    function تسجيل_الفاتورة() {
+        const رقم_الفاتورة = document.getElementById('invoice-num').value.trim();
+        const رقم_الطاولة = document.getElementById('table-num').value.trim();
+        const تحديد_المباشر = document.getElementById('crew-select');
+        const مباشر_يدوي = document.getElementById('manual-crew').value.trim();
+
+        let مُعرف_المستلم, اسم_المستلم;
+        
+        if (تحديد_المباشر.value === 'manual') {
+            if (!مباشر_يدوي) {
+                alert('الرجاء إدخال اسم المستلم اليدوي.');
+                return;
+            }
+            مُعرف_المستلم = 'MANUAL_' + Date.now(); 
+            اسم_المستلم = مباشر_يدوي;
+
+        } else if (تحديد_المباشر.value === 'MANUAL_CASHIER') {
+            مُعرف_المستلم = 'MANUAL_CASHIER';
+            اسم_المستلم = 'كاشير/غير محدد';
+            
+        } else if (تحديد_المباشر.value) {
+            const المباشرون = الحصول_على_العناصر(مفتاح_المباشرين);
+            const العضو_المحدد = المباشرون.find(م => م.id === تحديد_المباشر.value);
+            مُعرف_المستلم = العضو_المحدد.id;
+            اسم_المستلم = العضو_المحدد.name;
+        } else {
+            alert('الرجاء اختيار أو إدخال اسم المباشر المستلم.');
+            return;
+        }
+
+        if (!رقم_الفاتورة || !رقم_الطاولة) {
+            alert('الرجاء إدخال رقم الفاتورة ورقم الطاولة.');
+            return;
+        }
+        
+        const الآن = new Date();
+        const الختم_الزمني = الآن.toLocaleString('ar-EG', خيارات_التاريخ); 
+
+        const فاتورة_جديدة = {
+            id: Date.now(),
+            invoiceNum: رقم_الفاتورة,
+            tableNum: رقم_الطاولة,
+            recipientID: مُعرف_المستلم,
+            recipientName: اسم_المستلم,
+            timestamp: الختم_الزمني, 
+            recordedDate: الآن,
+            isCompleted: false,
+            timeToComplete: null, // إضافة حقل جديد لوقت الإنجاز
+            completedDate: null
+        };
+
+        let فواتير = الحصول_على_العناصر(مفتاح_الفواتير);
+        فواتير.push(فاتورة_جديدة);
+        حفظ_العناصر(مفتاح_الفواتير, فواتير);
+
+        alert(`تم تسجيل الفاتورة ${رقم_الفاتورة} للطاولة ${رقم_الطاولة} والمباشر ${اسم_المستلم}.`);
+
+        document.getElementById('invoice-num').value = '';
+        document.getElementById('table-num').value = '';
+        تحديد_المباشر.value = '';
+        document.getElementById('manual-crew').value = '';
+        تبديل_الإدخال_اليدوي();
+        
+        تحميل_سجل_اليوم();
+        ملء_التواريخ_المتاحة();
+    }
+    
+    function تعديل_الفاتورة(معرف_الفاتورة, رقم_الطاولة_الحالي, رقم_الفاتورة) {
+        const رقم_الطاولة_الجديد = prompt(`
+            تعديل رقم الطاولة للفاتورة: ${رقم_الفاتورة}
+            رقم الطاولة الحالي: ${رقم_الطاولة_الحالي}
+
+            الرجاء إدخال رقم الطاولة الجديد:
+        `);
+
+        if (رقم_الطاولة_الجديد === null || رقم_الطاولة_الجديد.trim() === "") {
+            return; 
+        }
+        
+        const رقم_الطاولة_المُنظف = رقم_الطاولة_الجديد.trim();
+        
+        if (رقم_الطاولة_المُنظف === رقم_الطاولة_الحالي) {
+            alert('رقم الطاولة الجديد هو نفس الرقم الحالي. لم يتم إجراء أي تغيير.');
+            return;
+        }
+
+        let فواتير = الحصول_على_العناصر(مفتاح_الفواتير);
+        const فهرس_الفاتورة = فواتير.findIndex(inv => inv.id === معرف_الفاتورة); 
+
+        if (فهرس_الفاتورة !== -1) {
+            فواتير[فهرس_الفاتورة].tableNum = رقم_الطاولة_المُنظف; 
+            فواتير[فهرس_الفاتورة].modificationNote = `تم تعديل الطاولة من ${رقم_الطاولة_الحالي} إلى ${رقم_الطاولة_المُنظف} (في: ${new Date().toLocaleString('ar-EG', {hour: '2-digit', minute: '2-digit', hour12: true})})`;
+            
+            حفظ_العناصر(مفتاح_الفواتير, فواتير);
+
+            alert(`✅ تم تحديث الفاتورة رقم ${رقم_الفاتورة}. رقم الطاولة الجديد هو: ${رقم_الطاولة_المُنظف}`);
+            
+            إعادة_تحميل_السجل_الحالي();
+
+        } else {
+            alert('❌ خطأ: لم يتم العثور على الفاتورة في السجل.');
+        }
+    }
+    
+    function إكمال_الفاتورة(معرف_الفاتورة) {
+        if (!confirm('هل أنت متأكد من إغلاق هذا الطلب؟ سيتم إيقاف مراقبة التأخير له.')) return;
+
+        let فواتير = الحصول_على_العناصر(مفتاح_الفواتير);
+        const فهرس_الفاتورة = فواتير.findIndex(inv => inv.id === معرف_الفاتورة); 
+
+        if (فهرس_الفاتورة !== -1) {
+            const فاتورة = فواتير[فهرس_الفاتورة];
+            const الآن = new Date();
+            
+            // 1. حساب وقت الإنجاز (TAT)
+            const فرق_بالملي_ثانية = الآن.getTime() - فاتورة.recordedDate.getTime();
+            const دقائق_الإنجاز = Math.round(فرق_بالملي_ثانية / (60 * 1000));
+            
+            // 2. تحديث بيانات الإكمال
+            فاتورة.isCompleted = true; 
+            فاتورة.completionTime = الآن.toLocaleString('ar-EG', خيارات_التاريخ);
+            فاتورة.completedDate = الآن;
+            فاتورة.timeToComplete = دقائق_الإنجاز; // حفظ وقت الإنجاز بالدقائق
+
+            // 3. التحقق من التأخير وتخزينه
+            if (دقائق_الإنجاز > حد_التأخير_بالدقائق) {
+                 فاتورة.wasDelayed = true;
+            }
+            
+            حفظ_العناصر(مفتاح_الفواتير, فواتير);
+
+            alert(`✅ تم إغلاق الطلب رقم ${فاتورة.invoiceNum} بنجاح. مدة الإنجاز: ${دقائق_الإنجاز} دقيقة.`);
+            
+            إعادة_تحميل_السجل_الحالي();
+        }
+    }
+    
+    function إعادة_تحميل_السجل_الحالي() {
+        const تبويب_اليوم = document.getElementById('today-log');
+        const تبويب_الأداء = document.getElementById('performance-log');
+        
+        if (تبويب_اليوم.classList.contains('active')) {
+            تحميل_سجل_اليوم();
+        } else if (تبويب_الأداء.classList.contains('active')) {
+            فلترة_الفواتير(); 
+        }
+    }
+    
+    // --- وظيفة البحث السريع المُعدلة (لتقتصر على اليوم وتظهر أحدث تسجيل) ---
+    function البحث_السريع(النوع) {
+        const إدخال_البحث = document.getElementById('search-input').value.trim();
+        const عرض_النتيجة = document.getElementById('search-result');
+        عرض_النتيجة.textContent = 'جارٍ البحث...';
+
+        if (!إدخال_البحث) {
+            عرض_النتيجة.textContent = 'الرجاء إدخال قيمة للبحث.';
+            return;
+        }
+
+        const فواتير_مسجلة = الحصول_على_العناصر(مفتاح_الفواتير);
+        let فاتورة_مكتشفة;
+
+        if (النوع === 'invoice') {
+            const سلسلة_تاريخ_اليوم = الحصول_على_سلسلة_تاريخ_الفاتورة(new Date());
+            const فواتير_اليوم_فقط = فواتير_مسجلة.filter(inv => 
+                الحصول_على_سلسلة_تاريخ_الفاتورة(inv) === سلسلة_تاريخ_اليوم
+            );
+            
+            // البحث عن أحدث فاتورة مسجلة بهذا الرقم في هذا اليوم
+            فاتورة_مكتشفة = فواتير_اليوم_فقط.slice().reverse().find(inv => inv.invoiceNum === إدخال_البحث); 
+            
+        } else if (النوع === 'table') {
+            // البحث برقم الطاولة يظل كما هو (يعرض أحدث تسجيل للطاولة أياً كان تاريخه)
+            فاتورة_مكتشفة = فواتير_مسجلة.slice().reverse().find(inv => inv.tableNum === إدخال_البحث);
+        }
+
+        if (فاتورة_مكتشفة) {
+            const اسم_المستلم_منسق = `<span class="crew-name-highlight">${فاتورة_مكتشفة.recipientName}</span>`;
+            
+            const التعديل = فاتورة_مكتشفة.modificationNote 
+                ? `<br> **تعديل سابق:** ${فاتورة_مكتشفة.modificationNote}`
+                : '';
+            
+            let الحالة;
+            let فرق_الوقت;
+            
+            if (فاتورة_مكتشفة.isCompleted) {
+                الحالة = `<span style="color: green;">مغلق/تم التسليم (${فاتورة_مكتشفة.timeToComplete} دقيقة) في: ${فاتورة_مكتشفة.completionTime}</span>`;
+                فرق_الوقت = '';
+            } else {
+                const فرق_الوقت_منسق = تنسيق_فرق_الوقت(فاتورة_مكتشفة.recordedDate);
+                الحالة = `<span style="color: red;">قيد التنفيذ (تأخير محتمل)</span>`;
+                فرق_الوقت = `<br> **الوقت المُنقضي:** ${فرق_الوقت_منسق}`;
+            }
+
+            عرض_النتيجة.innerHTML = `
+                رقم الفاتورة: **${فاتورة_مكتشفة.invoiceNum}**<br>
+                الطاولة: **${فاتورة_مكتشفة.tableNum}**<br>
+                المباشر المستلم: ${اسم_المستلم_منسق}<br>
+                وقت الاستلام: ${فاتورة_مكتشفة.timestamp}<br>
+                **الحالة:** ${الحالة}
+                ${فرق_الوقت} 
+                ${التعديل}
+            `;
+            
+        } else {
+            const رسالة_الخطأ = (النوع === 'invoice')
+                ? `❌ لم يتم العثور على فاتورة برقم ${إدخال_البحث} في سجل **اليوم الحالي**.`
+                : `❌ لم يتم العثور على فاتورة برقم ${إدخال_البحث}.`;
+                
+            عرض_النتيجة.textContent = رسالة_الخطأ;
+        }
+    }
+    
+    function تحميل_سجل_اليوم() {
+        const فواتير = الحصول_على_العناصر(مفتاح_الفواتير);
+        const سلسلة_تاريخ_اليوم = الحصول_على_سلسلة_تاريخ_الفاتورة(new Date()); 
+        
+        const فواتير_اليوم = فواتير.filter(inv => الحصول_على_سلسلة_تاريخ_الفاتورة(inv) === سلسلة_تاريخ_اليوم);
+        
+        عرض_الفواتير(فواتير_اليوم, '#today-invoices-table tbody', true);
+        
+        document.getElementById('today-stats').textContent = `الإجمالي: ${فواتير_اليوم.length} فاتورة مسجلة اليوم.`;
+    }
+    
+    function عرض_الفواتير(الفواتير, مُحدد_الجدول, هو_سجل_اليوم = false) {
+        const جسم_جدول_السجل = document.querySelector(مُحدد_الجدول);
+        جسم_جدول_السجل.innerHTML = '';
+        
+        الفواتير.slice().sort((a, b) => b.id - a.id).forEach(فاتورة => {
+            const صف = جسم_جدول_السجل.insertRow();
+            
+            // **تحسين تلوين الصفوف**
+            const هل_متأخر = !فاتورة.isCompleted && (new Date() - فاتورة.recordedDate) > (حد_التأخير_بالدقائق * 60 * 1000);
+            if (فاتورة.isCompleted) {
+                صف.classList.add('row-complete');
+            } else if (هل_متأخر) {
+                صف.classList.add('row-delayed');
+            }
+            
+            // 1. خلية الوقت/التاريخ
+            const خلية_الوقت = صف.insertCell();
+            let نص_الوقت;
+            if (هو_سجل_اليوم) {
+                نص_الوقت = فاتورة.timestamp.substring(فاتورة.timestamp.lastIndexOf('|') + 1).trim();
+            } else {
+                نص_الوقت = فاتورة.timestamp;
+            }
+            خلية_الوقت.textContent = نص_الوقت;
+            
+            // 2. رقم الفاتورة والطاولة والمستلم
+            صف.insertCell().textContent = فاتورة.invoiceNum;
+            صف.insertCell().textContent = فاتورة.tableNum;
+            صف.insertCell().textContent = فاتورة.recipientName;
+            
+            // 3. خلية مدة الإنجاز/المنقضي (TAT)
+            const خلية_الإنجاز = صف.insertCell();
+            if (فاتورة.isCompleted) {
+                خلية_الإنجاز.textContent = `${فاتورة.timeToComplete} دقيقة`;
+                if (فاتورة.wasDelayed) {
+                    خلية_الإنجاز.style.color = 'red';
+                }
+            } else {
+                // عرض الزمن المنقضي وتلوينه
+                خلية_الإنجاز.innerHTML = تنسيق_فرق_الوقت(فاتورة.recordedDate);
+            }
+
+
+            const خلية_الإجراء = صف.insertCell();
+            خلية_الإجراء.className = 'action-cell';
+            
+            if (!فاتورة.isCompleted) {
+                const زر_التعديل = document.createElement('button');
+                زر_التعديل.textContent = 'تعديل الطاولة 📝';
+                زر_التعديل.className = 'status-btn btn-print'; 
+                زر_التعديل.onclick = () => تعديل_الفاتورة(فاتورة.id, فاتورة.tableNum, فاتورة.invoiceNum); 
+                خلية_الإجراء.appendChild(زر_التعديل);
+                
+                const زر_الإكمال = document.createElement('button');
+                زر_الإكمال.textContent = 'إغلاق الطلب ✅';
+                زر_الإكمال.className = 'status-btn btn-complete'; 
+                زر_الإكمال.onclick = () => إكمال_الفاتورة(فاتورة.id); 
+                خلية_الإجراء.appendChild(زر_الإكمال);
+
+            } else {
+                 خلية_الإجراء.innerHTML = `<span style="color: green; font-size: 0.85rem;">تم الإغلاق</span>`;
+            }
+        });
+    }
+    
+    // --- وظائف مراقبة التأخير (كما هي) ---
+    
+    function تنبيه_التأخير(الفاتورة) {
+        const صندوق_التنبيه = document.getElementById('delay-alert-box');
+        document.getElementById('alert-invoice-num').textContent = الفاتورة.invoiceNum;
+        document.getElementById('alert-table-num').textContent = الفاتورة.tableNum;
+        صندوق_التنبيه.style.display = 'block';
+    }
+    
+    function hideDelayAlert() {
+        document.getElementById('delay-alert-box').style.display = 'none';
+    }
+
+    function بدء_مراقب_التأخير() {
+        // التحقق كل 30 ثانية لتحديث سجل اليوم والتنبيهات
+        setInterval(التحقق_من_تأخير_الفواتير, 30000); 
+        التحقق_من_تأخير_الفواتير();
+    }
+    
+    function التحقق_من_تأخير_الفواتير() {
+        const فواتير = الحصول_على_العناصر(مفتاح_الفواتير);
+        const حد_التأخير_ملي_ثانية = حد_التأخير_بالدقائق * 60 * 1000; 
+        const الآن = new Date();
+        let حدث_تأخير = false;
+        
+        فواتير.forEach(inv => {
+            if (!inv.isCompleted) {
+                const فرق_الوقت = الآن - inv.recordedDate;
+                
+                if (فرق_الوقت >= حد_التأخير_ملي_ثانية) {
+                    تنبيه_التأخير(inv);
+                    حدث_تأخير = true;
+                }
+            }
+        });
+        
+        // تحديث سجل اليوم إذا كانت الشاشة نشطة
+        if (document.getElementById('today-log').classList.contains('active') || حدث_تأخير) {
+            تحميل_سجل_اليوم();
+        }
+    }
+    
+    function ملء_التواريخ_المتاحة() {
+        const فواتير = الحصول_على_العناصر(مفتاح_الفواتير);
+        const فلترة_تحديد_التاريخ = document.getElementById('filter-date');
+        
+        const جميع_التواريخ = فواتير.map(inv => الحصول_على_سلسلة_تاريخ_الفاتورة(inv));
+        const التواريخ_الفريدة = [...new Set(جميع_التواريخ)].sort().reverse(); 
+        
+        فلترة_تحديد_التاريخ.innerHTML = '<option value="">-- عرض جميع التواريخ --</option>';
+        
+        التواريخ_الفريدة.forEach(سلسلة_التاريخ => {
+            const خيار = document.createElement('option');
+            خيار.value = سلسلة_التاريخ;
+            خيار.textContent = سلسلة_التاريخ; 
+            فلترة_تحديد_التاريخ.appendChild(خيار);
+        });
+    }
+    
+    function حساب_ملخص_الأداء(الفواتير) {
+        let مجموع_وقت_الإنجاز = 0;
+        let مجموع_فواتير_مكتملة = 0;
+        let مجموع_فواتير_متأخرة = 0;
+        let مجموع_دقائق_تأخير = 0; 
+
+        الفواتير.forEach(inv => {
+            if (inv.isCompleted) {
+                مجموع_فواتير_مكتملة++;
+                مجموع_وقت_الإنجاز += inv.timeToComplete;
+                
+                if (inv.timeToComplete > حد_التأخير_بالدقائق) {
+                    مجموع_فواتير_متأخرة++;
+                    // مجموع دقائق التأخير الفعلي (إذا تجاوز الحد)
+                    مجموع_دقائق_تأخير += (inv.timeToComplete - حد_التأخير_بالدقائق); 
+                }
+            }
+        });
+        
+        const متوسط_وقت_الإنجاز = مجموع_فواتير_مكتملة > 0 ? (مجموع_وقت_الإنجاز / مجموع_فواتير_مكتملة).toFixed(1) : '--';
+        const متوسط_دقائق_تأخير = مجموع_فواتير_متأخرة > 0 ? (مجموع_دقائق_تأخير / مجموع_فواتير_مكتملة).toFixed(1) : '0';
+
+        document.getElementById('avg-tat').textContent = `${متوسط_وقت_الإنجاز} دقيقة (${مجموع_فواتير_مكتملة} طلب)`;
+        document.getElementById('avg-delay').textContent = `${متوسط_دقائق_تأخير} دقيقة (${مجموع_فواتير_متأخرة} تأخير)`;
+    }
+
+
+    function فلترة_الفواتير() {
+        const تاريخ_الفلترة = document.getElementById('filter-date').value.trim();
+        const مُعرف_الفلترة_بالقائمة = document.getElementById('filter-crew-select').value.trim();
+        const مُعرف_الفلترة_بالإدخال = document.getElementById('filter-crew-id').value.trim().toUpperCase(); 
+        
+        let فواتير = الحصول_على_العناصر(مفتاح_الفواتير);
+        
+        let الفواتير_المفلترة = فواتير;
+        
+        if (تاريخ_الفلترة) {
+            الفواتير_المفلترة = الفواتير_المفلترة.filter(inv => الحصول_على_سلسلة_تاريخ_الفاتورة(inv) === تاريخ_الفلترة);
+        }
+        
+        let مُعرف_نهائي_للفلترة = مُعرف_الفلترة_بالقائمة;
+
+        if (مُعرف_الفلترة_بالإدخال) {
+             مُعرف_نهائي_للفلترة = مُعرف_الفلترة_بالإدخال;
+        }
+
+        if (مُعرف_نهائي_للفلترة) {
+            الفواتير_المفلترة = الفواتير_المفلترة.filter(inv => inv.recipientID === مُعرف_نهائي_للفلترة);
+        }
+
+        عرض_الفواتير(الفواتير_المفلترة, '#invoices-log-table tbody', false); 
+        حساب_ملخص_الأداء(الفواتير_المفلترة); // تحديث ملخص الأداء
+        
+        const عنصر_الإحصاءات = document.getElementById('filtered-stats');
+        const نص_التاريخ = تاريخ_الفلترة ? `بتاريخ: ${تاريخ_الفلترة}` : 'لجميع التواريخ';
+        
+        let نص_المباشر = 'للجميع';
+        if (مُعرف_نهائي_للفلترة) {
+            const المباشرون = الحصول_على_العناصر(مفتاح_المباشرين);
+            const العضو_المحدد = المباشرون.find(م => م.id === مُعرف_نهائي_للفلترة);
+            
+            if (العضو_المحدد) {
+                نص_المباشر = `للمباشر: ${العضو_المحدد.name} (ID: ${العضو_المحدد.id})`;
+            } else {
+                 نص_المباشر = `للمباشر (ID): ${مُعرف_نهائي_للفلترة} (اسم غير مسجل)`;
+            }
+
+        }
+
+        عنصر_الإحصاءات.textContent = `الإجمالي: ${الفواتير_المفلترة.length} فاتورة مُسجلة ${نص_المباشر} ${نص_التاريخ}`;
+    }
+
+    // --- وظائف الإدارة والحماية ---
+
+    function authenticateAndShowTab(tabId) {
+        const pin = prompt('الرجاء إدخال الرمز السري للإدارة:');
+        if (pin === ADMIN_PIN) {
+            showTab(tabId);
+        } else if (pin !== null) {
+            alert('رمز سري غير صحيح.');
+        }
+    }
+    
+    function مسح_جميع_البيانات() {
+        if (confirm('تحذير! هل أنت متأكد من مسح جميع بيانات الفواتير والمباشرين؟ لا يمكن التراجع عن هذا الإجراء.')) {
+            // التحقق من PIN مرة أخرى للتأكيد النهائي
+            const pin = prompt('إجراء خطير: أدخل الرمز السري الإداري للتأكيد النهائي للمسح:');
+            if (pin === ADMIN_PIN) {
+                 localStorage.removeItem(مفتاح_المباشرين);
+                 localStorage.removeItem(مفتاح_الفواتير);
+                 alert('تم مسح جميع البيانات بنجاح.');
+                 window.location.reload();
+            } else {
+                 alert('رمز سري غير صحيح. تم إلغاء عملية المسح.');
+            }
+        }
+    }
+
+
+    function showTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+            tab.style.display = 'none'; 
+        });
+        document.querySelectorAll('.tab').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        document.getElementById(tabId).classList.add('active');
+        document.getElementById(tabId).style.display = 'block';
+
+        const activeTabButton = document.getElementById('btn-' + tabId.replace('-', ''));
+        if (activeTabButton) {
+            activeTabButton.classList.add('active');
+        }
+        
+        if (tabId === 'crew-management') {
+            تحميل_قائمة_المباشرين();
+        } else if (tabId === 'today-log') {
+            تحميل_سجل_اليوم();
+        } else if (tabId === 'performance-log') {
+            تحميل_قائمة_المباشرين(); 
+            ملء_التواريخ_المتاحة();
+            document.getElementById('filter-date').value = '';
+            document.getElementById('filter-crew-select').value = '';
+            document.getElementById('filter-crew-id').value = ''; 
+            فلترة_الفواتير();
+        }
+    }
+
+    function exportDataToCSV() {
+        let فواتير = الحصول_على_العناصر(مفتاح_الفواتير);
+        if (فواتير.length === 0) {
+            alert("لا توجد بيانات لتصديرها.");
+            return;
+        }
+
+        let محتوى_CSV = "data:text/csv;charset=utf-8,\uFEFF"; 
+        
+        // تحديث الرؤوس
+        const الرؤوس = ["رقم الفاتورة", "رقم الطاولة", "المباشر ID", "المباشر الاسم", "وقت الاستلام", "الحالة", "مدة الإنجاز (دقيقة)", "متأخر؟", "وقت الإغلاق", "ملاحظة التعديل"];
+        محتوى_CSV += الرؤوس.join(",") + "\r\n";
+
+        فواتير.forEach(inv => {
+            
+            const نص_الحالة = inv.isCompleted ? "مغلق" : "قيد التنفيذ";
+            const نص_تأخير = inv.wasDelayed === true ? "نعم" : "لا";
+
+            const صف = [
+                inv.invoiceNum,
+                inv.tableNum,
+                inv.recipientID,
+                inv.recipientName,
+                inv.timestamp.replace(/,/g, ' '),
+                نص_الحالة,
+                inv.timeToComplete || '',
+                نص_تأخير,
+                inv.completionTime || '',
+                inv.modificationNote || ''
+            ].map(item => {
+                // التأكد من أن جميع العناصر هي سلاسل نصية وتضمينها بعلامات اقتباس إذا احتوت على فواصل
+                const strItem = (item === null || item === undefined) ? '' : String(item);
+                return `"${strItem.replace(/"/g, '""')}"`;
+            }).join(",");
+            
+            محتوى_CSV += صف + "\r\n";
+        });
+
+        const encodedUri = encodeURI(محتوى_CSV);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Invoices_Log_Andalus_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    function printInvoicesLog() {
+        window.print();
+    }
+
+
+    // تهيئة الصفحة عند التحميل
+    document.addEventListener('DOMContentLoaded', () => {
+        if (الحصول_على_العناصر(مفتاح_المباشرين).length === 0) {
+            حفظ_العناصر(مفتاح_المباشرين, [
+                { name: "علي", id: "A01" },
+                { name: "بدر", id: "B02" },
+                { name: "سالم", id: "S03" }
+            ]);
+        }
+        تحميل_قائمة_المباشرين();
+        showTab('invoice-entry');
+        ملء_التواريخ_المتاحة();
+        
+        بدء_مراقب_التأخير(); 
+    });
+
+</script>
+</body>
+</html>
